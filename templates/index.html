@@ -3,57 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio Chatbot</title>
+    <title>Chat Bot</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-<div class="chat-container">
-    <div class="chat-header">Chatbot</div>
-    <div class="chat-body" id="chat-body"></div>
-    <div class="chat-footer">
-        <input type="text" id="user-input" placeholder="Type your message..." />
-        <button onclick="sendMessage()">Send</button>
+    <div class="chat-container">
+        <div class="chat-header">Surajit's Assistant</div>
+        <div class="chat-body" id="chat-body"></div>
+        <div class="chat-footer">
+            <input type="text" id="user-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
-</div>
 
-<script>
-    function appendMessage(content, isUser) {
-        const chatBody = document.getElementById("chat-body");
-        const messageDiv = document.createElement("div");
-        messageDiv.classList.add("message");
-        messageDiv.classList.add(isUser ? "user-message" : "bot-message");
-        messageDiv.textContent = content;
-        chatBody.appendChild(messageDiv);
-        chatBody.scrollTop = chatBody.scrollHeight;
-    }
+    <audio id="messageSound">
+        <source src="{{ url_for('static', filename='sound.mp3') }}" type="audio/mpeg">
+    </audio>
 
-    async function sendMessage() {
-        const inputField = document.getElementById("user-input");
-        const userMessage = inputField.value.trim();
-        if (!userMessage) return;
-
-        appendMessage(userMessage, true);
-        inputField.value = "";
-
-        try {
-            const response = await fetch("/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: userMessage })
-            });
-
-            const data = await response.json();
-            if (data.response) {
-                appendMessage(data.response, false);
-            } else {
-                appendMessage("Error: Unable to get response.", false);
+    <script>
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
             }
-        } catch (error) {
-            appendMessage("Error: Failed to connect to the server.", false);
         }
-    }
-</script>
 
+        function sendMessage() {
+            let userInput = document.getElementById("user-input").value.trim();
+            if (!userInput) return;
+
+            let chatBody = document.getElementById("chat-body");
+
+            // Display user message
+            let userMessage = document.createElement("div");
+            userMessage.classList.add("message", "user-message");
+            userMessage.textContent = userInput;
+            chatBody.appendChild(userMessage);
+
+            // Clear input field
+            document.getElementById("user-input").value = "";
+
+            // Send message to Python backend
+            fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                let botMessage = document.createElement("div");
+                botMessage.classList.add("message", "bot-message");
+                botMessage.textContent = data.response;
+                chatBody.appendChild(botMessage);
+
+                // Play notification sound only for bot messages
+                let messageSound = document.getElementById("messageSound");
+                messageSound.play();
+
+                // Auto-scroll to latest message
+                chatBody.scrollTop = chatBody.scrollHeight;
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    </script>
 </body>
 </html>
