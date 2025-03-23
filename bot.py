@@ -1,10 +1,11 @@
 import google.generativeai as genai
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 app = Flask(__name__)
 CORS(app)
@@ -29,7 +30,7 @@ about_me_data = load_about_me()
 
 @app.route("/")
 def home():
-    return "Chatbot API is running"
+    return render_template("index.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
